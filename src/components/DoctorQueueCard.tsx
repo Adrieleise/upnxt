@@ -28,18 +28,22 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   const activePatients = patients.filter(p => !p.served && p.doctorId === doctor.id);
   const servedPatients = patients.filter(p => p.served && p.doctorId === doctor.id);
 
+  // Sort active patients by position to ensure correct display order
+  const sortedActivePatients = activePatients.sort((a, b) => a.position - b.position);
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const reorderedPatients = Array.from(activePatients);
+    const reorderedPatients = Array.from(sortedActivePatients);
     const [reorderedItem] = reorderedPatients.splice(result.source.index, 1);
     reorderedPatients.splice(result.destination.index, 0, reorderedItem);
 
-    // Update positions to match new array indices
+    // Update positions to match new array indices (1-based)
     const updatedPatients = reorderedPatients.map((patient, index) => ({
       ...patient,
       position: index + 1
     }));
+    
     onReorder(doctor.id, updatedPatients);
   };
 
@@ -87,7 +91,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
 
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold text-blue-600">{activePatients.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{sortedActivePatients.length}</div>
             <div className="text-xs text-gray-600">Waiting</div>
           </div>
           <div>
@@ -146,10 +150,10 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
       <div className="p-4">
         <h4 className="font-medium text-gray-900 mb-3 flex items-center">
           <Clock className="h-4 w-4 mr-2 text-blue-600" />
-          Current Queue ({activePatients.length})
+         Current Queue ({sortedActivePatients.length})
         </h4>
 
-        {activePatients.length === 0 ? (
+        {sortedActivePatients.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No patients in queue</p>
@@ -159,7 +163,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
             <Droppable droppableId={`doctor-${doctor.id}`}>
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                  {activePatients.map((patient, index) => (
+                  {sortedActivePatients.map((patient, index) => (
                     <Draggable key={patient.id} draggableId={patient.id} index={index}>
                       {(provided, snapshot) => (
                         <div

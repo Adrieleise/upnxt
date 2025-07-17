@@ -31,26 +31,24 @@ export const useQueue = (doctorId?: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let q = query(
-      collection(db, 'patients'),
-      where('served', '==', false),
-      orderBy('position', 'asc')
-    );
-
+    // Query all patients and sort in memory to avoid Firestore index requirements
+    let q = query(collection(db, 'patients'));
+    
     if (doctorId) {
-      q = query(
-        collection(db, 'patients'),
-        where('doctorId', '==', doctorId),
-        where('served', '==', false),
-        orderBy('position', 'asc')
-      );
+      q = query(collection(db, 'patients'), where('doctorId', '==', doctorId));
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const patientsData = snapshot.docs.map((doc) => ({
+      let patientsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Patient[];
+      
+      // Add missing position fields and sort by position
+      patientsData = patientsData.map((patient, index) => ({
+        ...patient,
+        position: patient.position || index + 1
+      })).sort((a, b) => a.position - b.position);
       
       setPatients(patientsData);
       setLoading(false);
@@ -151,7 +149,6 @@ export const useQueue = (doctorId?: string) => {
       });
 
       await batch.commit();
-      toast.success('Queue reordered successfully');
     } catch (error) {
       toast.error('Error reordering queue');
       throw error;
