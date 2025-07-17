@@ -11,6 +11,8 @@ interface DoctorQueueCardProps {
   onMarkServed: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (patient: Patient) => void;
+  isDragging: boolean;
+  setIsDragging: (dragging: boolean) => void;
 }
 
 const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
@@ -20,6 +22,8 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   onMarkServed,
   onRemove,
   onEdit,
+  isDragging,
+  setIsDragging,
 }) => {
   const { addPatient } = useQueue();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -31,8 +35,14 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   // Sort active patients by position to ensure correct display order
   const sortedActivePatients = activePatients.sort((a, b) => a.position - b.position);
 
+  const handleDragStart = () => {
+    console.log("🚀 Drag started - pausing Firestore updates");
+    setIsDragging(true);
+  };
+
   const handleDragEnd = (result: DropResult) => {
     console.log("🔥 Drag event:", result);
+    setIsDragging(false);
 
     if (!result.destination) {
       console.warn("⛔ No destination — dropped outside");
@@ -65,7 +75,9 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${
+      isDragging ? 'pointer-events-none' : ''
+    }`}>
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -82,6 +94,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
             </div>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
+              disabled={isDragging}
               className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               <UserPlus className="h-4 w-4" />
@@ -159,7 +172,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
             <p className="text-sm">No patients in queue</p>
           </div>
         ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <Droppable droppableId={`doctor-${doctor.id}`}>
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">

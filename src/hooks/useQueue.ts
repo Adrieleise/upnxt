@@ -26,7 +26,7 @@ const getTodayString = (): string => {
   return new Date().toISOString().split('T')[0];
 };
 
-export const useQueue = (doctorId?: string) => {
+export const useQueue = (doctorId?: string, isDragging?: boolean) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +39,12 @@ export const useQueue = (doctorId?: string) => {
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // Skip updating patients state while dragging to prevent conflicts
+      if (isDragging) {
+        console.log("⏸️ Skipping Firestore update - drag in progress");
+        return;
+      }
+
       let patientsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -55,7 +61,7 @@ export const useQueue = (doctorId?: string) => {
     });
 
     return unsubscribe;
-  }, [doctorId]);
+  }, [doctorId, isDragging]);
 
   const getNextQueueNumber = async (doctorId: string): Promise<number> => {
     const today = getTodayString();

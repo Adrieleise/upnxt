@@ -10,7 +10,8 @@ import { Patient } from '../types';
 
 const AdminDashboard: React.FC = () => {
   const { logout } = useAuth();
-  const { patients, loading, removePatient, updatePatient, markAsServed, reorderPatients } = useQueue();
+  const [isDragging, setIsDragging] = useState(false);
+  const { patients, loading, removePatient, updatePatient, markAsServed, reorderPatients } = useQueue(undefined, isDragging);
   const { doctors } = useDoctors();
   const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats'>('queues');
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -127,6 +128,8 @@ const AdminDashboard: React.FC = () => {
                     onMarkServed={markAsServed}
                     onRemove={removePatient}
                     onEdit={handleEdit}
+                    isDragging={isDragging}
+                    setIsDragging={setIsDragging}
                   />
                 ))}
                 
