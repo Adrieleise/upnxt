@@ -32,19 +32,19 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   const sortedActivePatients = activePatients.sort((a, b) => a.position - b.position);
 
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    console.log("🔥 Drag event:", result);
 
-    const reorderedPatients = Array.from(sortedActivePatients);
-    const [reorderedItem] = reorderedPatients.splice(result.source.index, 1);
-    reorderedPatients.splice(result.destination.index, 0, reorderedItem);
+    if (!result.destination) {
+      console.warn("⛔ No destination — dropped outside");
+      return;
+    }
 
-    // Update positions to match new array indices (1-based)
-    const updatedPatients = reorderedPatients.map((patient, index) => ({
-      ...patient,
-      position: index + 1
-    }));
-    
-    onReorder(doctor.id, updatedPatients);
+    const reorderedPatients = Array.from(activePatients);
+    const [movedPatient] = reorderedPatients.splice(result.source.index, 1);
+    reorderedPatients.splice(result.destination.index, 0, movedPatient);
+
+    console.log("✅ Reordered patients:", reorderedPatients.map(p => p.name));
+    onReorder(doctor.id, reorderedPatients);
   };
 
   const handleAddPatient = async (e: React.FormEvent) => {
@@ -171,7 +171,9 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           className={`bg-gray-50 rounded-lg p-3 border ${
-                            snapshot.isDragging ? 'shadow-lg border-blue-300' : 'border-gray-200'
+                            snapshot.isDragging 
+                              ? 'shadow-lg border-blue-300 bg-blue-50 transform rotate-2 scale-105' 
+                              : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
                           <div className="flex items-center justify-between">

@@ -141,15 +141,21 @@ export const useQueue = (doctorId?: string) => {
 
   const reorderPatients = async (doctorId: string, reorderedPatients: Patient[]) => {
     try {
+      console.log("🔄 Starting Firestore batch update for reordering...");
+      
       const batch = writeBatch(db);
       
       reorderedPatients.forEach((patient, index) => {
         const patientRef = doc(db, 'patients', patient.id);
         batch.update(patientRef, { position: index + 1 });
+        console.log(`📝 Updating ${patient.name} to position ${index + 1}`);
       });
 
       await batch.commit();
+      console.log("✅ Queue reordering saved to Firestore successfully!");
+      toast.success('Queue reordered successfully');
     } catch (error) {
+      console.error("❌ Error reordering queue:", error);
       toast.error('Error reordering queue');
       throw error;
     }
