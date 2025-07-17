@@ -35,7 +35,12 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
     const [reorderedItem] = reorderedPatients.splice(result.source.index, 1);
     reorderedPatients.splice(result.destination.index, 0, reorderedItem);
 
-    onReorder(doctor.id, reorderedPatients);
+    // Update positions to match new array indices
+    const updatedPatients = reorderedPatients.map((patient, index) => ({
+      ...patient,
+      position: index + 1
+    }));
+    onReorder(doctor.id, updatedPatients);
   };
 
   const handleAddPatient = async (e: React.FormEvent) => {

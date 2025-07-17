@@ -33,6 +33,7 @@ export const useQueue = (doctorId?: string) => {
   useEffect(() => {
     let q = query(
       collection(db, 'patients'),
+      where('served', '==', false),
       orderBy('position', 'asc')
     );
 
@@ -40,6 +41,7 @@ export const useQueue = (doctorId?: string) => {
       q = query(
         collection(db, 'patients'),
         where('doctorId', '==', doctorId),
+        where('served', '==', false),
         orderBy('position', 'asc')
       );
     }
