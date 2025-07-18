@@ -47,10 +47,13 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
 
       // Optional delay to prevent reactivity issues during drag operations
       const updatePatients = () => {
-        let patientsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Patient[];
+        let patientsData = snapshot.docs.map((doc) => {
+          if (!doc.id) console.warn('Missing patient ID from Firestore doc:', doc);
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        }) as Patient[];
 
         patientsData = patientsData.map((patient, index) => {
   if (!patient.id) console.warn('Missing ID', patient); // ← 👈 ADD THIS LINE
