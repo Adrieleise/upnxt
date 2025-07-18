@@ -32,10 +32,12 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
 
   // Stable activePatients state to prevent re-computation on every render
   useEffect(() => {
-    const filtered = patients.filter(p => !p.served && p.doctorId === doctor.id);
-    const sorted = filtered.sort((a, b) => a.position - b.position);
-    setActivePatients(sorted);
-  }, [patients, doctor.id]);
+    if (!isDragging) {
+      const filtered = patients.filter(p => !p.served && p.doctorId === doctor.id);
+      const sorted = filtered.sort((a, b) => a.position - b.position);
+      setActivePatients(sorted);
+    }
+  }, [patients, doctor.id, isDragging]);
 
   const servedPatients = patients.filter(p => p.served && p.doctorId === doctor.id);
 
@@ -190,6 +192,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
                       return true;
                     })
                     .map((patient, index) => (
+                      console.log("Rendering Draggable:", patient.id, patient.name),
                       <Draggable key={patient.id} draggableId={patient.id} index={index}>
                         {(provided, snapshot) => (
                           <div
