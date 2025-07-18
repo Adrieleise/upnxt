@@ -189,6 +189,84 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
     }
   };
 
+  const movePatientUp = async (patientId: string) => {
+    try {
+      const patient = patients.find(p => p.id === patientId);
+      if (!patient || patient.served) return;
+
+      const activePatients = patients
+        .filter(p => !p.served && p.doctorId === patient.doctorId)
+        .sort((a, b) => a.position - b.position);
+
+      const currentIndex = activePatients.findIndex(p => p.id === patientId);
+      if (currentIndex <= 0) return; // Already at top or not found
+
+      const previousPatient = activePatients[currentIndex - 1];
+      
+      // Swap positions using batch write
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'patients', patient.id), { position: previousPatient.position });
+      batch.update(doc(db, 'patients', previousPatient.id), { position: patient.position });
+  const movePatientDown = async (patientId: string) => {
+    try {
+      const patient = patients.find(p => p.id === patientId);
+      if (!patient || patient.served) return;
+      
+      const activePatients = patients
+        .filter(p => !p.served && p.doctorId === patient.doctorId)
+        .sort((a, b) => a.position - b.position);
+      await batch.commit();
+      const currentIndex = activePatients.findIndex(p => p.id === patientId);
+      if (currentIndex < 0 || currentIndex >= activePatients.length - 1) return; // Already at bottom or not found
+      toast.success(`${patient.name} moved up in queue`);
+      const nextPatient = activePatients[currentIndex + 1];
+      
+      // Swap positions using batch write
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'patients', patient.id), { position: nextPatient.position });
+      batch.update(doc(db, 'patients', nextPatient.id), { position: patient.position });
+      
+      await batch.commit();
+      toast.success(`${patient.name} moved down in queue`);
+    } catch (error) {
+      console.error('Error moving patient down:', error);
+      toast.error('Error moving patient down');
+      throw error;
+    }
+  };
+    } catch (error) {
+  const reorderQueue = async (doctorId: string, fromIndex: number, toIndex: number) => {
+    try {
+      const activePatients = patients
+        .filter(p => !p.served && p.doctorId === doctorId)
+        .sort((a, b) => a.position - b.position);
+      console.error('Error moving patient up:', error);
+      if (fromIndex < 0 || fromIndex >= activePatients.length || 
+          toIndex < 0 || toIndex >= activePatients.length || 
+          fromIndex === toIndex) {
+        return;
+      }
+      toast.error('Error moving patient up');
+      // Create new order array
+      const reorderedPatients = Array.from(activePatients);
+      const [movedPatient] = reorderedPatients.splice(fromIndex, 1);
+      reorderedPatients.splice(toIndex, 0, movedPatient);
+      throw error;
+      // Update positions in batch
+      const batch = writeBatch(db);
+      reorderedPatients.forEach((patient, index) => {
+        batch.update(doc(db, 'patients', patient.id), { position: index + 1 });
+      });
+    }
+      await batch.commit();
+      toast.success('Queue reordered successfully');
+    } catch (error) {
+      console.error('Error reordering queue:', error);
+      toast.error('Error reordering queue');
+      throw error;
+    }
+  };
+  };
   return {
     patients,
     loading,
@@ -197,5 +275,8 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
     removePatient,
     markAsServed,
     reorderPatients,
+    movePatientUp,
+    movePatientDown,
+    reorderQueue,
   };
 };

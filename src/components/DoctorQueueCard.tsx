@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { Plus, User, Phone, Clock, CheckCircle, SkipForward, Trash2, Edit, UserPlus } from 'lucide-react';
+import { Plus, User, Phone, Clock, CheckCircle, SkipForward, Trash2, Edit, UserPlus, ChevronUp, ChevronDown } from 'lucide-react';
 import { Patient, Doctor } from '../types';
 import { useQueue } from '../hooks/useQueue';
 
@@ -25,7 +25,7 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
   isDragging,
   setIsDragging,
 }) => {
-  const { addPatient } = useQueue();
+  const { addPatient, movePatientUp, movePatientDown } = useQueue();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '' });
   const [activePatients, setActivePatients] = useState<Patient[]>([]);
@@ -223,6 +223,35 @@ const DoctorQueueCard: React.FC<DoctorQueueCardProps> = ({
                               </div>
                               
                               <div className="flex items-center space-x-1">
+                                {/* Move Up/Down Buttons */}
+                                <div className="flex flex-col">
+                                  <button
+                                    onClick={() => movePatientUp(patient.id)}
+                                    disabled={index === 0}
+                                    className={`p-1 rounded text-xs transition-colors ${
+                                      index === 0
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                    }`}
+                                    title="Move up"
+                                  >
+                                    <ChevronUp className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => movePatientDown(patient.id)}
+                                    disabled={index === activePatients.length - 1}
+                                    className={`p-1 rounded text-xs transition-colors ${
+                                      index === activePatients.length - 1
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                    }`}
+                                    title="Move down"
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                
+                                {/* Action Buttons */}
                                 <button
                                   onClick={() => onMarkServed(patient.id)}
                                   className="bg-green-600 text-white p-1 rounded text-xs hover:bg-green-700 transition-colors"
