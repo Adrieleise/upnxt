@@ -51,7 +51,16 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
           id: doc.id,
           ...doc.data(),
         })) as Patient[];
-        
+
+        patientsData = patientsData.map((patient, index) => {
+  if (!patient.id) console.warn('Missing ID', patient); // ← 👈 ADD THIS LINE
+
+  return {
+    ...patient,
+    position: patient.position || index + 1
+  };
+}).sort((a, b) => a.position - b.position);
+
         // Add missing position fields and sort by position
         patientsData = patientsData.map((patient, index) => ({
           ...patient,
