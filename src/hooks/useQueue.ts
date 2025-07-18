@@ -45,19 +45,29 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
         return;
       }
 
-      let patientsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Patient[];
-      
-      // Add missing position fields and sort by position
-      patientsData = patientsData.map((patient, index) => ({
-        ...patient,
-        position: patient.position || index + 1
-      })).sort((a, b) => a.position - b.position);
-      
-      setPatients(patientsData);
-      setLoading(false);
+      // Optional delay to prevent reactivity issues during drag operations
+      const updatePatients = () => {
+        let patientsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Patient[];
+        
+        // Add missing position fields and sort by position
+        patientsData = patientsData.map((patient, index) => ({
+          ...patient,
+          position: patient.position || index + 1
+        })).sort((a, b) => a.position - b.position);
+        
+        setPatients(patientsData);
+        setLoading(false);
+      };
+
+      // Small delay to prevent conflicts with drag operations
+      if (isDragging) {
+        setTimeout(updatePatients, 100);
+      } else {
+        updatePatients();
+      }
     });
 
     return unsubscribe;
