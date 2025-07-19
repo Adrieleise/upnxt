@@ -75,10 +75,10 @@ const AdminDashboard: React.FC = () => {
               <div key={stat.title} className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-600 font-body">{stat.title}</p>
-                  <p className="text-3xl font-bold text-primary font-heading">{stat.value}</p>
+                    <p className="text-sm text-gray-600 font-body">{stat.title}</p>
+                    <p className="text-3xl font-bold text-primary font-heading">{stat.value}</p>
+                  </div>
+                  <Icon className={`h-8 w-8 ${stat.color}`} />
                 </div>
               </div>
             );
