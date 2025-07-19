@@ -11,21 +11,21 @@ const Home: React.FC = () => {
     <Layout>
       <div className="max-w-4xl mx-auto space-y-12">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome to UpNext
+          <h1 className="text-4xl font-bold text-primary mb-4 font-heading">
+            Welcome to UpNxt
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-gray-600 mb-8 font-body">
             Join the patient queue and wait comfortably for your turn
           </p>
           
           {!loading && availableDoctors.length > 0 && (
-            <div className="bg-blue-50 rounded-lg p-4 mb-8">
-              <h3 className="font-semibold text-blue-900 mb-2">Available Doctors Today</h3>
+            <div className="bg-accent/10 rounded-lg p-4 mb-8">
+              <h3 className="font-semibold text-primary mb-2 font-heading">Available Doctors Today</h3>
               <div className="flex flex-wrap justify-center gap-2">
                 {availableDoctors.map((doctor) => (
                   <span
                     key={doctor.id}
-                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                    className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-body"
                   >
                     {doctor.name} - {doctor.specialty}
                   </span>

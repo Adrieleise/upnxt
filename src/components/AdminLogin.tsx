@@ -32,14 +32,14 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-gray-100">
         <div className="text-center mb-8">
-          <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4">
-            <Lock className="h-8 w-8 text-blue-600 mx-auto" />
+          <div className="bg-primary/10 p-4 rounded-full w-16 h-16 mx-auto mb-4">
+            <Lock className="h-8 w-8 text-primary mx-auto" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Login</h2>
-          <p className="text-gray-600">Enter your credentials to access the dashboard</p>
+          <h2 className="text-2xl font-bold text-primary mb-2 font-heading">Admin Login</h2>
+          <p className="text-gray-600 font-body">Enter your credentials to access the dashboard</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -56,7 +56,7 @@ const AdminLogin: React.FC = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors font-body"
                 placeholder="Enter your email"
               />
             </div>
@@ -75,7 +75,7 @@ const AdminLogin: React.FC = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors font-body"
                 placeholder="Enter your password"
               />
               <button
@@ -91,16 +91,16 @@ const AdminLogin: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-accent text-white py-3 px-6 rounded-lg font-medium hover:bg-accent/90 focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-heading"
           >
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">Demo credentials:</p>
-          <p className="text-xs text-gray-500">Email: admin@upnext.com</p>
-          <p className="text-xs text-gray-500">Password: admin123</p>
+        <div className="mt-6 p-4 bg-neutral rounded-lg">
+          <p className="text-sm text-gray-600 mb-2 font-body">Demo credentials:</p>
+          <p className="text-xs text-gray-500 font-body">Email: admin@upnext.com</p>
+          <p className="text-xs text-gray-500 font-body">Password: admin123</p>
         </div>
       </div>
     </div>

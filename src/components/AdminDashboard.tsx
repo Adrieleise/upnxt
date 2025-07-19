@@ -47,17 +47,17 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/10">
+      <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-sm text-gray-600">Manage patient queues and clinic operations</p>
+              <h1 className="text-2xl font-bold text-primary font-heading">Admin Dashboard</h1>
+              <p className="text-sm text-gray-600 font-body">Manage patient queues and clinic operations</p>
             </div>
             <button
               onClick={logout}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 font-heading"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
@@ -77,8 +77,8 @@ const AdminDashboard: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600">{stat.title}</p>
                     <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                  <Icon className={`h-12 w-12 ${stat.color}`} />
+                  <p className="text-sm text-gray-600 font-body">{stat.title}</p>
+                  <p className="text-3xl font-bold text-primary font-heading">{stat.value}</p>
                 </div>
               </div>
             );
@@ -95,9 +95,9 @@ const AdminDashboard: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                    className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 font-heading ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
+                        ? 'border-accent text-accent'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -113,7 +113,7 @@ const AdminDashboard: React.FC = () => {
         {/* Tab Content */}
         {loading ? (
           <div className="flex justify-center items-center h-48">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
           </div>
         ) : (
           <>
@@ -135,9 +135,9 @@ const AdminDashboard: React.FC = () => {
                 
                 {doctors.length === 0 && (
                   <div className="col-span-full text-center py-12 bg-white rounded-lg">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No doctors added yet</p>
-                    <p className="text-sm text-gray-500 mt-2">Add doctors in the Doctor Management tab</p>
+                    <Users className="h-12 w-12 text-primary/40 mx-auto mb-4" />
+                    <p className="text-gray-600 font-body">No doctors added yet</p>
+                    <p className="text-sm text-gray-500 mt-2 font-body">Add doctors in the Doctor Management tab</p>
                   </div>
                 )}
               </div>
@@ -153,7 +153,7 @@ const AdminDashboard: React.FC = () => {
       {editingPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Edit Patient</h3>
+            <h3 className="text-lg font-bold mb-4 text-primary font-heading">Edit Patient</h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -162,43 +162,43 @@ const AdminDashboard: React.FC = () => {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Name</label>
                 <input
                   type="text"
                   value={editingPatient.name}
                   onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-accent focus:border-accent font-body"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Phone</label>
                 <input
                   type="tel"
                   value={editingPatient.phone}
                   onChange={(e) => setEditingPatient({ ...editingPatient, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-accent focus:border-accent font-body"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Patient Code</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Patient Code</label>
                 <input
                   type="text"
                   value={editingPatient.patientCode}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-neutral text-gray-500 font-body"
                 />
               </div>
               <div className="flex space-x-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors font-heading"
                 >
                   Save Changes
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingPatient(null)}
-                  className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                  className="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors font-heading"
                 >
                   Cancel
                 </button>

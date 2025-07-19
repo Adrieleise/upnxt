@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 
@@ -10,6 +11,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
         <Toaster

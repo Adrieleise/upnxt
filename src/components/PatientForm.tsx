@@ -126,26 +126,26 @@ const PatientForm: React.FC = () => {
         </div>
 
         <div className="space-y-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-1">#{queuePosition}</div>
-            <div className="text-sm text-gray-600">Position in line</div>
+          <div className="bg-primary/5 p-4 rounded-lg text-center">
+            <div className="text-3xl font-bold text-primary mb-1 font-heading">#{queuePosition}</div>
+            <div className="text-sm text-gray-600 font-body">Position in line</div>
           </div>
           
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-lg font-bold text-green-600 mb-1">{patientCode}</div>
-            <div className="text-sm text-gray-600">Your patient code</div>
+          <div className="bg-accent/10 p-4 rounded-lg text-center">
+            <div className="text-lg font-bold text-accent mb-1 font-heading">{patientCode}</div>
+            <div className="text-sm text-gray-600 font-body">Your patient code</div>
           </div>
           
-          <div className="bg-gray-50 p-4 rounded-lg text-center">
-            <div className="font-medium text-gray-900">{doctor?.name}</div>
-            <div className="text-sm text-gray-600">{doctor?.specialty}</div>
+          <div className="bg-neutral p-4 rounded-lg text-center">
+            <div className="font-medium text-primary font-heading">{doctor?.name}</div>
+            <div className="text-sm text-gray-600 font-body">{doctor?.specialty}</div>
           </div>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={refreshStatus}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center space-x-2"
+            className="w-full bg-accent text-white py-3 px-6 rounded-lg font-medium hover:bg-accent/90 focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors flex items-center justify-center space-x-2 font-heading"
           >
             <RefreshCw className="h-4 w-4" />
             <span>Refresh Status</span>
@@ -153,7 +153,7 @@ const PatientForm: React.FC = () => {
           
           <button
             onClick={resetForm}
-            className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+            className="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors font-heading"
           >
             Join Another Queue
           </button>
@@ -163,20 +163,20 @@ const PatientForm: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+    <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto border border-gray-100">
       <div className="text-center mb-8">
-        <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4">
-          <UserPlus className="h-8 w-8 text-blue-600 mx-auto" />
+        <div className="bg-accent/10 p-4 rounded-full w-16 h-16 mx-auto mb-4">
+          <UserPlus className="h-8 w-8 text-accent mx-auto" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Join the Queue</h2>
-        <p className="text-gray-600">Select a doctor and enter your details</p>
+        <h2 className="text-2xl font-bold text-primary mb-2 font-heading">Join the Queue</h2>
+        <p className="text-gray-600 font-body">Select a doctor and enter your details</p>
       </div>
 
       {availableDoctors.length === 0 ? (
         <div className="text-center py-8">
-          <Stethoscope className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No doctors are currently accepting patients</p>
-          <p className="text-sm text-gray-500 mt-2">Please check back later</p>
+          <Stethoscope className="h-12 w-12 text-primary/40 mx-auto mb-4" />
+          <p className="text-gray-600 font-body">No doctors are currently accepting patients</p>
+          <p className="text-sm text-gray-500 mt-2 font-body">Please check back later</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -192,7 +192,7 @@ const PatientForm: React.FC = () => {
                 value={formData.doctorId}
                 onChange={handleInputChange}
                 required
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors appearance-none bg-white font-body"
               >
                 <option value="">Choose a doctor</option>
                 {availableDoctors.map((doctor) => (
@@ -217,7 +217,7 @@ const PatientForm: React.FC = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors font-body"
                 placeholder="Enter your full name"
               />
             </div>
@@ -237,15 +237,15 @@ const PatientForm: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
-                  phoneError ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                }`}
+                  phoneError ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-accent'
+                } font-body`}
                 placeholder="09123456789"
               />
             </div>
             {phoneError && (
               <p className="text-red-600 text-sm">{phoneError}</p>
             )}
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 font-body">
               Enter your Philippine mobile number (e.g., 09123456789)
             </p>
           </div>
@@ -253,7 +253,7 @@ const PatientForm: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-accent text-white py-3 px-6 rounded-lg font-medium hover:bg-accent/90 focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-heading"
           >
             {loading ? 'Joining Queue...' : 'Join Queue'}
           </button>
