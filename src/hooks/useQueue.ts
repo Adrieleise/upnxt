@@ -207,6 +207,16 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
       const batch = writeBatch(db);
       batch.update(doc(db, 'patients', patient.id), { position: previousPatient.position });
       batch.update(doc(db, 'patients', previousPatient.id), { position: patient.position });
+
+      await batch.commit();
+      toast.success(`${patient.name} moved up in queue`);
+    } catch (error) {
+      console.error('Error moving patient up:', error);
+      toast.error('Error moving patient up');
+      throw error;
+    }
+  };
+
   const movePatientDown = async (patientId: string) => {
     try {
       const patient = patients.find(p => p.id === patientId);
@@ -215,10 +225,10 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
       const activePatients = patients
         .filter(p => !p.served && p.doctorId === patient.doctorId)
         .sort((a, b) => a.position - b.position);
-      await batch.commit();
+
       const currentIndex = activePatients.findIndex(p => p.id === patientId);
       if (currentIndex < 0 || currentIndex >= activePatients.length - 1) return; // Already at bottom or not found
-      toast.success(`${patient.name} moved up in queue`);
+
       const nextPatient = activePatients[currentIndex + 1];
       
       // Swap positions using batch write
@@ -234,30 +244,30 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
       throw error;
     }
   };
-    } catch (error) {
+
   const reorderQueue = async (doctorId: string, fromIndex: number, toIndex: number) => {
     try {
       const activePatients = patients
         .filter(p => !p.served && p.doctorId === doctorId)
         .sort((a, b) => a.position - b.position);
-      console.error('Error moving patient up:', error);
+
       if (fromIndex < 0 || fromIndex >= activePatients.length || 
           toIndex < 0 || toIndex >= activePatients.length || 
           fromIndex === toIndex) {
         return;
       }
-      toast.error('Error moving patient up');
+
       // Create new order array
       const reorderedPatients = Array.from(activePatients);
       const [movedPatient] = reorderedPatients.splice(fromIndex, 1);
       reorderedPatients.splice(toIndex, 0, movedPatient);
-      throw error;
+
       // Update positions in batch
       const batch = writeBatch(db);
       reorderedPatients.forEach((patient, index) => {
         batch.update(doc(db, 'patients', patient.id), { position: index + 1 });
       });
-    }
+
       await batch.commit();
       toast.success('Queue reordered successfully');
     } catch (error) {
@@ -266,7 +276,7 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
       throw error;
     }
   };
-  };
+
   return {
     patients,
     loading,
