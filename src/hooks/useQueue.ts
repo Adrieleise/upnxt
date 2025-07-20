@@ -277,6 +277,57 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
     }
   };
 
+  const skipPatient = async (patientId: string, newPosition: number) => {
+    try {
+      const patient = patients.find(p => p.id === patientId);
+      if (!patient || patient.served || patient.hasSkipped) {
+        throw new Error('Invalid patient or already skipped');
+      }
+
+      const activePatients = patients
+        .filter(p => !p.served && p.doctorId === patient.doctorId)
+        .sort((a, b) => a.position - b.position);
+
+      const currentIndex = activePatients.findIndex(p => p.id === patientId);
+      if (currentIndex < 0 || newPosition <= currentIndex + 1) {
+        throw new Error('Invalid position for skipping');
+      }
+
+      // Create new order with patient moved to new position
+      const reorderedPatients = Array.from(activePatients);
+      const [movedPatient] = reorderedPatients.splice(currentIndex, 1);
+      reorderedPatients.splice(newPosition - 1, 0, movedPatient);
+
+      // Update positions and mark as skipped
+      const batch = writeBatch(db);
+      reorderedPatients.forEach((p, index) => {
+        const updates: any = { position: index + 1 };
+        if (p.id === patientId) {
+          updates.hasSkipped = true;
+          updates.skippedAt = serverTimestamp();
+        }
+        batch.update(doc(db, 'patients', p.id), updates);
+      });
+
+      await batch.commit();
+      
+      const ordinalSuffix = getOrdinalSuffix(newPosition);
+      toast.success(`You've been moved to ${newPosition}${ordinalSuffix} in line.`);
+    } catch (error) {
+      console.error('Error skipping patient:', error);
+      toast.error('Error updating position');
+      throw error;
+    }
+  };
+
+  const getOrdinalSuffix = (num: number): string => {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) return 'st';
+    if (j === 2 && k !== 12) return 'nd';
+    if (j === 3 && k !== 13) return 'rd';
+    return 'th';
+  };
   return {
     patients,
     loading,
@@ -288,5 +339,7 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
     movePatientUp,
     movePatientDown,
     reorderQueue,
+    skipPatient,
+    getOrdinalSuffix,
   };
 };

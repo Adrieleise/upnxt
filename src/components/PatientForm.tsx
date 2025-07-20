@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Phone, User, Stethoscope, CheckCircle, RefreshCw } from 'lucide-react';
+import { UserPlus, Phone, User, Stethoscope, CheckCircle, RefreshCw, SkipForward, ChevronDown, ChevronUp } from 'lucide-react';
 import { useQueue } from '../hooks/useQueue';
 import { useDoctors } from '../hooks/useDoctors';
 import { validatePhilippinePhone, formatPhilippinePhone } from '../utils/phoneValidation';
@@ -14,8 +14,11 @@ const PatientForm: React.FC = () => {
   const [patientCode, setPatientCode] = useState<string | null>(null);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [phoneError, setPhoneError] = useState<string>('');
+  const [showSkipOptions, setShowSkipOptions] = useState(false);
+  const [selectedNewPosition, setSelectedNewPosition] = useState<number | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
-  const { addPatient, patients } = useQueue();
+  const { addPatient, patients, skipPatient, getOrdinalSuffix } = useQueue();
   const { doctors } = useDoctors();
 
   // Filter doctors that are accepting queues
@@ -107,13 +110,51 @@ const PatientForm: React.FC = () => {
   const resetForm = () => {
     setPatientCode(null);
     setQueuePosition(null);
+    setShowSkipOptions(false);
+    setSelectedNewPosition(null);
+    setShowConfirmation(false);
     localStorage.removeItem('patientCode');
   };
 
+  const handleSkipMe = () => {
+    setShowSkipOptions(true);
+  };
+
+  const handlePositionSelect = (newPosition: number) => {
+    setSelectedNewPosition(newPosition);
+    setShowConfirmation(true);
+  };
+
+  const confirmSkip = async () => {
+    if (!patientCode || !selectedNewPosition) return;
+    
+    try {
+      const patient = patients.find(p => p.patientCode === patientCode);
+      if (patient) {
+        await skipPatient(patient.id, selectedNewPosition);
+        setShowSkipOptions(false);
+        setShowConfirmation(false);
+        setSelectedNewPosition(null);
+        refreshStatus();
+      }
+    } catch (error) {
+      console.error('Error skipping:', error);
+    }
+  };
+
+  const cancelSkip = () => {
+    setShowSkipOptions(false);
+    setShowConfirmation(false);
+    setSelectedNewPosition(null);
+  };
   // If patient already has a queue entry, show status
   if (patientCode && queuePosition) {
     const patient = patients.find(p => p.patientCode === patientCode);
     const doctor = doctors.find(d => d.id === patient?.doctorId);
+    const doctorPatients = patients.filter(p => p.doctorId === patient?.doctorId && !p.served);
+    const totalInQueue = doctorPatients.length;
+    const isLastInLine = queuePosition === totalInQueue;
+    const canSkip = !patient?.hasSkipped && !isLastInLine;
 
     return (
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
@@ -142,6 +183,79 @@ const PatientForm: React.FC = () => {
           </div>
         </div>
 
+        {/* Skip Me Section */}
+        {!showSkipOptions && !showConfirmation && (
+          <div className="mb-6">
+            {canSkip ? (
+              <button
+                onClick={handleSkipMe}
+                className="w-full bg-yellow-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors flex items-center justify-center space-x-2 font-heading"
+              >
+                <SkipForward className="h-4 w-4" />
+                <span>Skip Me</span>
+              </button>
+            ) : patient?.hasSkipped ? (
+              <div className="bg-gray-100 text-gray-600 py-3 px-6 rounded-lg text-center font-body">
+                You've already used your skip
+              </div>
+            ) : isLastInLine ? (
+              <div className="bg-gray-100 text-gray-600 py-3 px-6 rounded-lg text-center font-body">
+                You're already last in line
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {/* Position Selection */}
+        {showSkipOptions && !showConfirmation && (
+          <div className="mb-6 bg-yellow-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-3 font-heading">Choose your new position:</h3>
+            <div className="space-y-2">
+              {Array.from({ length: totalInQueue - queuePosition }, (_, i) => {
+                const newPos = queuePosition + i + 1;
+                return (
+                  <button
+                    key={newPos}
+                    onClick={() => handlePositionSelect(newPos)}
+                    className="w-full bg-white border border-gray-300 hover:border-yellow-500 hover:bg-yellow-50 py-2 px-4 rounded-lg text-left transition-colors font-body"
+                  >
+                    Move to {newPos}{getOrdinalSuffix(newPos)} in line
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={cancelSkip}
+              className="w-full mt-3 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors font-heading"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Confirmation */}
+        {showConfirmation && selectedNewPosition && (
+          <div className="mb-6 bg-yellow-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-3 font-heading">Confirm Position Change</h3>
+            <p className="text-gray-700 mb-4 font-body">
+              Move to {selectedNewPosition}{getOrdinalSuffix(selectedNewPosition)} in line?
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={confirmSkip}
+                className="flex-1 bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors font-heading"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={cancelSkip}
+                className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors font-heading"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         <div className="space-y-3">
           <button
             onClick={refreshStatus}

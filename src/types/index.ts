@@ -9,6 +9,8 @@ export interface Patient {
   queueNumber: number;
   patientCode: string;
   dateAdded: string; // YYYY-MM-DD format
+  hasSkipped?: boolean;
+  skippedAt?: any;
 }
 
 export interface Doctor {
