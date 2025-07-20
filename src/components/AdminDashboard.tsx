@@ -17,7 +17,6 @@ const AdminDashboard: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const { patients, loading, removePatient, updatePatient, markAsServed, reorderPatients } = useQueue(undefined, isDragging);
   const { doctors } = useDoctors();
-  const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats'>('queues');
   const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats' | 'reset'>('queues');
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 
