@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Users, Clock, CheckCircle, Settings, BarChart3 } from 'lucide-react';
+import { LogOut, Users, Clock, CheckCircle, Settings, BarChart3, RefreshCw } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useQueue } from '../hooks/useQueue';
 import { useDoctors } from '../hooks/useDoctors';
@@ -7,14 +7,18 @@ import DoctorManagement from './DoctorManagement';
 import DoctorQueueCard from './DoctorQueueCard';
 import QRCodeGenerator from './QRCodeGenerator';
 import Analytics from './Analytics';
+import DailyResetManager from './DailyResetManager';
+import { useDailyReset } from '../hooks/useDailyReset';
 import { Patient } from '../types';
 
 const AdminDashboard: React.FC = () => {
   const { logout } = useAuth();
+  const { checkAndPerformReset } = useDailyReset();
   const [isDragging, setIsDragging] = useState(false);
   const { patients, loading, removePatient, updatePatient, markAsServed, reorderPatients } = useQueue(undefined, isDragging);
   const { doctors } = useDoctors();
   const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats'>('queues');
+  const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats' | 'reset'>('queues');
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 
   const activePatients = patients.filter(p => !p.served);
@@ -44,6 +48,7 @@ const AdminDashboard: React.FC = () => {
   const tabs = [
     { id: 'queues', label: 'Queue Management', icon: Clock },
     { id: 'doctors', label: 'Doctor Management', icon: Users },
+    { id: 'reset', label: 'Daily Reset', icon: RefreshCw },
     { id: 'qr', label: 'QR Code', icon: Settings },
     { id: 'stats', label: 'Analytics', icon: BarChart3 },
   ];
@@ -146,6 +151,7 @@ const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'doctors' && <DoctorManagement />}
+            {activeTab === 'reset' && <DailyResetManager />}
             {activeTab === 'qr' && <QRCodeGenerator />}
             {activeTab === 'stats' && <Analytics />}
           </>

@@ -70,7 +70,8 @@ export const useDoctors = () => {
   const toggleAcceptingQueues = async (id: string, accepting: boolean) => {
     try {
       await updateDoc(doc(db, 'doctors', id), { acceptingQueues: accepting });
-      toast.success(`Queue ${accepting ? 'opened' : 'closed'} for doctor`);
+      const message = accepting ? 'Doctor enabled for today' : 'Doctor disabled for today';
+      toast.success(message);
     } catch (error) {
       toast.error('Error updating doctor status');
       throw error;
