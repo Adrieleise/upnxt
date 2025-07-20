@@ -6,6 +6,7 @@ import { useDoctors } from '../hooks/useDoctors';
 import DoctorManagement from './DoctorManagement';
 import DoctorQueueCard from './DoctorQueueCard';
 import QRCodeGenerator from './QRCodeGenerator';
+import Analytics from './Analytics';
 import { Patient } from '../types';
 
 const AdminDashboard: React.FC = () => {
@@ -44,6 +45,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'queues', label: 'Queue Management', icon: Clock },
     { id: 'doctors', label: 'Doctor Management', icon: Users },
     { id: 'qr', label: 'QR Code', icon: Settings },
+    { id: 'stats', label: 'Analytics', icon: BarChart3 },
   ];
 
   return (
@@ -145,6 +147,7 @@ const AdminDashboard: React.FC = () => {
 
             {activeTab === 'doctors' && <DoctorManagement />}
             {activeTab === 'qr' && <QRCodeGenerator />}
+            {activeTab === 'stats' && <Analytics />}
           </>
         )}
       </main>

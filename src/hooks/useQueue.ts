@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Patient } from '../types';
+import { useAnalytics } from './useAnalytics';
 import toast from 'react-hot-toast';
 
 const generatePatientCode = (queueNumber: number, doctorName: string): string => {
@@ -29,6 +30,7 @@ const getTodayString = (): string => {
 export const useQueue = (doctorId?: string, isDragging?: boolean) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const { logPatientEvent } = useAnalytics();
 
   useEffect(() => {
     // Query all patients and sort in memory to avoid Firestore index requirements
@@ -149,6 +151,17 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
 
   const removePatient = async (id: string) => {
     try {
+      const patient = patients.find(p => p.id === id);
+      if (patient) {
+        // Log analytics event
+        await logPatientEvent(
+          patient.doctorId,
+          patient.name,
+          patient.timestamp?.toDate() || new Date(),
+          'canceled'
+        );
+      }
+      
       await deleteDoc(doc(db, 'patients', id));
       toast.success('Patient removed from queue');
     } catch (error) {
@@ -159,6 +172,18 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
 
   const markAsServed = async (id: string) => {
     try {
+      const patient = patients.find(p => p.id === id);
+      if (patient) {
+        // Log analytics event
+        await logPatientEvent(
+          patient.doctorId,
+          patient.name,
+          patient.timestamp?.toDate() || new Date(),
+          'served',
+          new Date()
+        );
+      }
+      
       await updateDoc(doc(db, 'patients', id), { served: true });
       toast.success('Patient marked as served');
     } catch (error) {
@@ -284,6 +309,13 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
         throw new Error('Invalid patient or already skipped');
       }
 
+      // Log analytics event
+      await logPatientEvent(
+        patient.doctorId,
+        patient.name,
+        patient.timestamp?.toDate() || new Date(),
+        'skipped'
+      );
       const activePatients = patients
         .filter(p => !p.served && p.doctorId === patient.doctorId)
         .sort((a, b) => a.position - b.position);
