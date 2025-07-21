@@ -8,161 +8,147 @@ import {
   doc, 
   serverTimestamp, 
   orderBy, 
-  query, 
-  where,
+  query,
   writeBatch,
   getDocs
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Patient } from '../types';
-import { useAnalytics } from './useAnalytics';
 import toast from 'react-hot-toast';
 
-const generatePatientCode = (queueNumber: number, doctorName: string): string => {
-  const doctorCode = doctorName.replace(/[^A-Z]/g, '').substring(0, 6);
-  return `P${queueNumber}${doctorCode}`;
-};
-
-const getTodayString = (): string => {
-  return new Date().toISOString().split('T')[0];
-};
-
-export const useQueue = (doctorId?: string, isDragging?: boolean) => {
-  const [patients, setPatients] = useState<Patient[]>([]);
+export const useQueue = (clinicId: string) => {
+  const [queuePatients, setQueuePatients] = useState<Patient[]>([]);
+  const [servedPatients, setServedPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const { logPatientEvent } = useAnalytics();
 
   useEffect(() => {
-    // Query all patients and sort in memory to avoid Firestore index requirements
-    let q = query(collection(db, 'patients'));
+    if (!clinicId) return;
+
+    // Listen to queue collection
+    const queueQuery = query(
+      collection(db, 'clinics', clinicId, 'queue'),
+      orderBy('joinedAt', 'asc')
+    );
     
-    if (doctorId) {
-      q = query(collection(db, 'patients'), where('doctorId', '==', doctorId));
-    }
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      // Skip updating patients state while dragging to prevent conflicts
-      if (isDragging) {
-        console.log("⏸️ Skipping Firestore update - drag in progress");
-        return;
-      }
-
-      // Optional delay to prevent reactivity issues during drag operations
-      const updatePatients = () => {
-        let patientsData = snapshot.docs.map((doc) => {
-          if (!doc.id) console.warn('Missing patient ID from Firestore doc:', doc);
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        }) as Patient[];
-
-        patientsData = patientsData.map((patient, index) => {
-  if (!patient.id) console.warn('Missing ID', patient); // ← 👈 ADD THIS LINE
-
-  return {
-    ...patient,
-    position: patient.position || index + 1
-  };
-}).sort((a, b) => a.position - b.position);
-
-        // Add missing position fields and sort by position
-        patientsData = patientsData.map((patient, index) => ({
-          ...patient,
-          position: patient.position || index + 1
-        })).sort((a, b) => a.position - b.position);
-        
-        setPatients(patientsData);
-        setLoading(false);
-      };
-
-      // Small delay to prevent conflicts with drag operations
-      if (isDragging) {
-        setTimeout(updatePatients, 100);
-      } else {
-        updatePatients();
-      }
+    const unsubscribeQueue = onSnapshot(queueQuery, (snapshot) => {
+      const patients = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Patient[];
+      
+      setQueuePatients(patients);
+      setLoading(false);
     });
 
-    return unsubscribe;
-  }, [doctorId, isDragging]);
-
-  const getNextQueueNumber = async (doctorId: string): Promise<number> => {
-    const today = getTodayString();
-    const q = query(
-      collection(db, 'patients'),
-      where('doctorId', '==', doctorId),
-      where('dateAdded', '==', today)
+    // Listen to served collection
+    const servedQuery = query(
+      collection(db, 'clinics', clinicId, 'served'),
+      orderBy('servedAt', 'desc')
     );
     
-    const snapshot = await getDocs(q);
-    return snapshot.size + 1;
-  };
+    const unsubscribeServed = onSnapshot(servedQuery, (snapshot) => {
+      const patients = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Patient[];
+      
+      setServedPatients(patients);
+    });
 
-  const getNextPosition = async (doctorId: string): Promise<number> => {
-    const q = query(
-      collection(db, 'patients'),
-      where('doctorId', '==', doctorId),
-      where('served', '==', false)
-    );
-    
-    const snapshot = await getDocs(q);
-    return snapshot.size + 1;
-  };
+    return () => {
+      unsubscribeQueue();
+      unsubscribeServed();
+    };
+  }, [clinicId]);
 
-  const addPatient = async (
-    patientData: Omit<Patient, 'id' | 'timestamp' | 'served' | 'position' | 'queueNumber' | 'patientCode' | 'dateAdded'>,
-    doctorName: string
-  ) => {
+  const addPatient = async (patientData: Omit<Patient, 'id' | 'joinedAt' | 'status'>) => {
     try {
-      const queueNumber = await getNextQueueNumber(patientData.doctorId);
-      const position = await getNextPosition(patientData.doctorId);
-      const patientCode = generatePatientCode(queueNumber, doctorName);
-      const today = getTodayString();
-
-      const newPatient = {
+      await addDoc(collection(db, 'clinics', clinicId, 'queue'), {
         ...patientData,
-        timestamp: serverTimestamp(),
-        served: false,
-        position,
-        queueNumber,
-        patientCode,
-        dateAdded: today,
-      };
-
-      await addDoc(collection(db, 'patients'), newPatient);
-      toast.success(`Successfully joined queue! Your code: ${patientCode}`);
-      return patientCode;
+        joinedAt: serverTimestamp(),
+        status: 'waiting',
+      });
+      toast.success('Successfully joined queue!');
     } catch (error) {
       toast.error('Error joining queue');
       throw error;
     }
   };
 
-  const updatePatient = async (id: string, updates: Partial<Patient>) => {
+  const servePatient = async (patientId: string) => {
     try {
-      await updateDoc(doc(db, 'patients', id), updates);
-      toast.success('Patient updated successfully');
+      const patient = queuePatients.find(p => p.id === patientId);
+      if (!patient) return;
+
+      const batch = writeBatch(db);
+      
+      // Add to served collection
+      const servedRef = doc(collection(db, 'clinics', clinicId, 'served'));
+      batch.set(servedRef, {
+        ...patient,
+        status: 'served',
+        servedAt: serverTimestamp(),
+      });
+      
+      // Remove from queue
+      const queueRef = doc(db, 'clinics', clinicId, 'queue', patientId);
+      batch.delete(queueRef);
+      
+      await batch.commit();
+      toast.success('Patient marked as served');
     } catch (error) {
-      toast.error('Error updating patient');
+      toast.error('Error serving patient');
       throw error;
     }
   };
 
-  const removePatient = async (id: string) => {
+  const skipPatient = async (patientId: string) => {
     try {
-      const patient = patients.find(p => p.id === id);
-      if (patient) {
-        // Log analytics event
-        await logPatientEvent(
-          patient.doctorId,
-          patient.name,
-          patient.timestamp?.toDate() || new Date(),
-          'canceled'
-        );
-      }
+      const patient = queuePatients.find(p => p.id === patientId);
+      if (!patient) return;
+
+      const batch = writeBatch(db);
       
-      await deleteDoc(doc(db, 'patients', id));
+      // Add to served collection with skipped status
+      const servedRef = doc(collection(db, 'clinics', clinicId, 'served'));
+      batch.set(servedRef, {
+        ...patient,
+        status: 'skipped',
+        servedAt: serverTimestamp(),
+      });
+      
+      // Remove from queue
+      const queueRef = doc(db, 'clinics', clinicId, 'queue', patientId);
+      batch.delete(queueRef);
+      
+      await batch.commit();
+      toast.success('Patient skipped');
+    } catch (error) {
+      toast.error('Error skipping patient');
+      throw error;
+    }
+  };
+
+  const removePatient = async (patientId: string) => {
+    try {
+      const patient = queuePatients.find(p => p.id === patientId);
+      if (!patient) return;
+
+      const batch = writeBatch(db);
+      
+      // Add to served collection with canceled status
+      const servedRef = doc(collection(db, 'clinics', clinicId, 'served'));
+      batch.set(servedRef, {
+        ...patient,
+        status: 'canceled',
+        servedAt: serverTimestamp(),
+      });
+      
+      // Remove from queue
+      const queueRef = doc(db, 'clinics', clinicId, 'queue', patientId);
+      batch.delete(queueRef);
+      
+      await batch.commit();
       toast.success('Patient removed from queue');
     } catch (error) {
       toast.error('Error removing patient');
@@ -170,208 +156,83 @@ export const useQueue = (doctorId?: string, isDragging?: boolean) => {
     }
   };
 
-  const markAsServed = async (id: string) => {
+  const resetQueue = async () => {
     try {
-      const patient = patients.find(p => p.id === id);
-      if (patient) {
-        // Log analytics event
-        await logPatientEvent(
-          patient.doctorId,
-          patient.name,
-          patient.timestamp?.toDate() || new Date(),
-          'served',
-          new Date()
-        );
-      }
-      
-      await updateDoc(doc(db, 'patients', id), { served: true });
-      toast.success('Patient marked as served');
-    } catch (error) {
-      toast.error('Error updating patient status');
-      throw error;
-    }
-  };
-
-  const reorderPatients = async (doctorId: string, reorderedPatients: Patient[]) => {
-    try {
-      console.log("🔄 Starting Firestore batch update for reordering...");
-      
-      const batch = writeBatch(db);
-      
-      reorderedPatients.forEach((patient, index) => {
-        const patientRef = doc(db, 'patients', patient.id);
-        batch.update(patientRef, { position: index + 1 });
-        console.log(`📝 Updating ${patient.name} to position ${index + 1}`);
-      });
-
-      await batch.commit();
-      console.log("✅ Queue reordering saved to Firestore successfully!");
-      toast.success('Queue reordered successfully');
-    } catch (error) {
-      console.error("❌ Error reordering queue:", error);
-      toast.error('Error reordering queue');
-      throw error;
-    }
-  };
-
-  const movePatientUp = async (patientId: string) => {
-    try {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || patient.served) return;
-
-      const activePatients = patients
-        .filter(p => !p.served && p.doctorId === patient.doctorId)
-        .sort((a, b) => a.position - b.position);
-
-      const currentIndex = activePatients.findIndex(p => p.id === patientId);
-      if (currentIndex <= 0) return; // Already at top or not found
-
-      const previousPatient = activePatients[currentIndex - 1];
-      
-      // Swap positions using batch write
-      const batch = writeBatch(db);
-      batch.update(doc(db, 'patients', patient.id), { position: previousPatient.position });
-      batch.update(doc(db, 'patients', previousPatient.id), { position: patient.position });
-
-      await batch.commit();
-      toast.success(`${patient.name} moved up in queue`);
-    } catch (error) {
-      console.error('Error moving patient up:', error);
-      toast.error('Error moving patient up');
-      throw error;
-    }
-  };
-
-  const movePatientDown = async (patientId: string) => {
-    try {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || patient.served) return;
-      
-      const activePatients = patients
-        .filter(p => !p.served && p.doctorId === patient.doctorId)
-        .sort((a, b) => a.position - b.position);
-
-      const currentIndex = activePatients.findIndex(p => p.id === patientId);
-      if (currentIndex < 0 || currentIndex >= activePatients.length - 1) return; // Already at bottom or not found
-
-      const nextPatient = activePatients[currentIndex + 1];
-      
-      // Swap positions using batch write
-      const batch = writeBatch(db);
-      batch.update(doc(db, 'patients', patient.id), { position: nextPatient.position });
-      batch.update(doc(db, 'patients', nextPatient.id), { position: patient.position });
-      
-      await batch.commit();
-      toast.success(`${patient.name} moved down in queue`);
-    } catch (error) {
-      console.error('Error moving patient down:', error);
-      toast.error('Error moving patient down');
-      throw error;
-    }
-  };
-
-  const reorderQueue = async (doctorId: string, fromIndex: number, toIndex: number) => {
-    try {
-      const activePatients = patients
-        .filter(p => !p.served && p.doctorId === doctorId)
-        .sort((a, b) => a.position - b.position);
-
-      if (fromIndex < 0 || fromIndex >= activePatients.length || 
-          toIndex < 0 || toIndex >= activePatients.length || 
-          fromIndex === toIndex) {
+      if (!confirm('Are you sure you want to reset the queue? All remaining patients will be marked as canceled.')) {
         return;
       }
 
-      // Create new order array
-      const reorderedPatients = Array.from(activePatients);
-      const [movedPatient] = reorderedPatients.splice(fromIndex, 1);
-      reorderedPatients.splice(toIndex, 0, movedPatient);
-
-      // Update positions in batch
       const batch = writeBatch(db);
-      reorderedPatients.forEach((patient, index) => {
-        batch.update(doc(db, 'patients', patient.id), { position: index + 1 });
+      
+      // Move all queue patients to served with canceled status
+      queuePatients.forEach((patient) => {
+        const servedRef = doc(collection(db, 'clinics', clinicId, 'served'));
+        batch.set(servedRef, {
+          ...patient,
+          status: 'canceled',
+          servedAt: serverTimestamp(),
+        });
+        
+        const queueRef = doc(db, 'clinics', clinicId, 'queue', patient.id);
+        batch.delete(queueRef);
       });
-
-      await batch.commit();
-      toast.success('Queue reordered successfully');
-    } catch (error) {
-      console.error('Error reordering queue:', error);
-      toast.error('Error reordering queue');
-      throw error;
-    }
-  };
-
-  const skipPatient = async (patientId: string, newPosition: number) => {
-    try {
-      const patient = patients.find(p => p.id === patientId);
-      if (!patient || patient.served || patient.hasSkipped) {
-        throw new Error('Invalid patient or already skipped');
-      }
-
-      // Log analytics event
-      await logPatientEvent(
-        patient.doctorId,
-        patient.name,
-        patient.timestamp?.toDate() || new Date(),
-        'skipped'
-      );
-      const activePatients = patients
-        .filter(p => !p.served && p.doctorId === patient.doctorId)
-        .sort((a, b) => a.position - b.position);
-
-      const currentIndex = activePatients.findIndex(p => p.id === patientId);
-      if (currentIndex < 0 || newPosition <= currentIndex + 1) {
-        throw new Error('Invalid position for skipping');
-      }
-
-      // Create new order with patient moved to new position
-      const reorderedPatients = Array.from(activePatients);
-      const [movedPatient] = reorderedPatients.splice(currentIndex, 1);
-      reorderedPatients.splice(newPosition - 1, 0, movedPatient);
-
-      // Update positions and mark as skipped
-      const batch = writeBatch(db);
-      reorderedPatients.forEach((p, index) => {
-        const updates: any = { position: index + 1 };
-        if (p.id === patientId) {
-          updates.hasSkipped = true;
-          updates.skippedAt = serverTimestamp();
-        }
-        batch.update(doc(db, 'patients', p.id), updates);
-      });
-
+      
       await batch.commit();
       
-      const ordinalSuffix = getOrdinalSuffix(newPosition);
-      toast.success(`You've been moved to ${newPosition}${ordinalSuffix} in line.`);
+      // Calculate and store daily analytics
+      await calculateDailyAnalytics();
+      
+      toast.success('Queue reset successfully');
     } catch (error) {
-      console.error('Error skipping patient:', error);
-      toast.error('Error updating position');
+      toast.error('Error resetting queue');
       throw error;
     }
   };
 
-  const getOrdinalSuffix = (num: number): string => {
-    const j = num % 10;
-    const k = num % 100;
-    if (j === 1 && k !== 11) return 'st';
-    if (j === 2 && k !== 12) return 'nd';
-    if (j === 3 && k !== 13) return 'rd';
-    return 'th';
+  const calculateDailyAnalytics = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const todayServed = servedPatients.filter(p => {
+        const servedDate = p.servedAt?.toDate?.()?.toISOString().split('T')[0];
+        return servedDate === today;
+      });
+
+      const served = todayServed.filter(p => p.status === 'served');
+      const skipped = todayServed.filter(p => p.status === 'skipped');
+      const canceled = todayServed.filter(p => p.status === 'canceled');
+
+      const waitTimes = served
+        .filter(p => p.joinedAt && p.servedAt)
+        .map(p => {
+          const joined = p.joinedAt.toDate();
+          const servedAt = p.servedAt.toDate();
+          return Math.round((servedAt.getTime() - joined.getTime()) / (1000 * 60));
+        });
+
+      const analytics = {
+        totalServed: served.length,
+        totalSkipped: skipped.length,
+        totalCanceled: canceled.length,
+        averageWaitTime: waitTimes.length > 0 ? Math.round(waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length) : 0,
+        shortestWaitTime: waitTimes.length > 0 ? Math.min(...waitTimes) : 0,
+        longestWaitTime: waitTimes.length > 0 ? Math.max(...waitTimes) : 0,
+        queueSize: queuePatients.length,
+      };
+
+      await updateDoc(doc(db, 'clinics', clinicId, 'analytics', today), analytics);
+    } catch (error) {
+      console.error('Error calculating analytics:', error);
+    }
   };
+
   return {
-    patients,
+    queuePatients,
+    servedPatients,
     loading,
     addPatient,
-    updatePatient,
-    removePatient,
-    markAsServed,
-    reorderPatients,
-    movePatientUp,
-    movePatientDown,
-    reorderQueue,
+    servePatient,
     skipPatient,
-    getOrdinalSuffix,
+    removePatient,
+    resetQueue,
   };
 };

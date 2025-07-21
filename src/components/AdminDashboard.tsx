@@ -1,55 +1,58 @@
 import React, { useState } from 'react';
-import { LogOut, Users, Clock, CheckCircle, Settings, BarChart3, RefreshCw } from 'lucide-react';
+import { LogOut, Users, Clock, CheckCircle, Settings, BarChart3, RefreshCw, Building2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useQueue } from '../hooks/useQueue';
-import { useDoctors } from '../hooks/useDoctors';
-import DoctorManagement from './DoctorManagement';
-import DoctorQueueCard from './DoctorQueueCard';
+import { useClinic } from '../hooks/useClinic';
+import QueueManagement from './QueueManagement';
+import ClinicSettings from './ClinicSettings';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import QRCodeGenerator from './QRCodeGenerator';
-import Analytics from './Analytics';
-import DailyResetManager from './DailyResetManager';
-import { useDailyReset } from '../hooks/useDailyReset';
-import { Patient } from '../types';
 
 const AdminDashboard: React.FC = () => {
-  const { logout } = useAuth();
-  const { checkAndPerformReset } = useDailyReset();
-  const [isDragging, setIsDragging] = useState(false);
-  const { patients, loading, removePatient, updatePatient, markAsServed, reorderPatients } = useQueue(undefined, isDragging);
-  const { doctors } = useDoctors();
-  const [activeTab, setActiveTab] = useState<'queues' | 'doctors' | 'qr' | 'stats' | 'reset'>('queues');
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const { logout, clinic } = useAuth();
+  const { queuePatients, servedPatients, resetQueue } = useQueue(clinic?.id || '');
+  const [activeTab, setActiveTab] = useState<'queue' | 'settings' | 'analytics' | 'qr'>('queue');
 
-  const activePatients = patients.filter(p => !p.served);
-  const servedPatients = patients.filter(p => p.served);
+  if (!clinic) return null;
+
   const todayString = new Date().toISOString().split('T')[0];
-  const todayPatients = patients.filter(p => p.dateAdded === todayString);
-
-  const handleEdit = (patient: Patient) => {
-    setEditingPatient(patient);
-  };
-
-  const handleSaveEdit = async (updatedPatient: Patient) => {
-    await updatePatient(updatedPatient.id, {
-      name: updatedPatient.name,
-      phone: updatedPatient.phone,
-    });
-    setEditingPatient(null);
-  };
+  const todayServed = servedPatients.filter(p => {
+    const servedDate = p.servedAt?.toDate?.()?.toISOString().split('T')[0];
+    return servedDate === todayString;
+  });
 
   const stats = [
-    { title: 'Active Queues', value: activePatients.length, icon: Clock, color: 'text-blue-600' },
-    { title: 'Served Today', value: servedPatients.filter(p => p.dateAdded === todayString).length, icon: CheckCircle, color: 'text-green-600' },
-    { title: 'Total Today', value: todayPatients.length, icon: Users, color: 'text-purple-600' },
-    { title: 'Active Doctors', value: doctors.filter(d => d.acceptingQueues).length, icon: BarChart3, color: 'text-orange-600' },
+    { 
+      title: 'Current Queue', 
+      value: queuePatients.length, 
+      icon: Clock, 
+      color: 'text-blue-600' 
+    },
+    { 
+      title: 'Served Today', 
+      value: todayServed.filter(p => p.status === 'served').length, 
+      icon: CheckCircle, 
+      color: 'text-green-600' 
+    },
+    { 
+      title: 'Skipped Today', 
+      value: todayServed.filter(p => p.status === 'skipped').length, 
+      icon: Users, 
+      color: 'text-yellow-600' 
+    },
+    { 
+      title: 'Canceled Today', 
+      value: todayServed.filter(p => p.status === 'canceled').length, 
+      icon: RefreshCw, 
+      color: 'text-red-600' 
+    },
   ];
 
   const tabs = [
-    { id: 'queues', label: 'Queue Management', icon: Clock },
-    { id: 'doctors', label: 'Doctor Management', icon: Users },
-    { id: 'reset', label: 'Daily Reset', icon: RefreshCw },
-    { id: 'qr', label: 'QR Code', icon: Settings },
-    { id: 'stats', label: 'Analytics', icon: BarChart3 },
+    { id: 'queue', label: 'Queue Management', icon: Clock },
+    { id: 'settings', label: 'Clinic Settings', icon: Settings },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'qr', label: 'QR Code', icon: Building2 },
   ];
 
   return (
@@ -58,16 +61,25 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-primary font-heading">Admin Dashboard</h1>
-              <p className="text-sm text-gray-600 font-body">Manage patient queues and clinic operations</p>
+              <h1 className="text-2xl font-bold text-primary font-heading">{clinic.name}</h1>
+              <p className="text-sm text-gray-600 font-body">Admin Dashboard</p>
             </div>
-            <button
-              onClick={logout}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 font-heading"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={resetQueue}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 font-heading"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span>Reset Queue</span>
+              </button>
+              <button
+                onClick={logout}
+                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center space-x-2 font-heading"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -78,7 +90,7 @@ const AdminDashboard: React.FC = () => {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.title} className="bg-white rounded-lg shadow-sm p-6">
+              <div key={stat.title} className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 font-body">{stat.title}</p>
@@ -117,104 +129,11 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        {loading ? (
-          <div className="flex justify-center items-center h-48">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'queues' && (
-              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {doctors.map((doctor) => (
-                  <DoctorQueueCard
-                    key={doctor.id}
-                    doctor={doctor}
-                    patients={patients}
-                    onReorder={reorderPatients}
-                    onMarkServed={markAsServed}
-                    onRemove={removePatient}
-                    onEdit={handleEdit}
-                    isDragging={isDragging}
-                    setIsDragging={setIsDragging}
-                  />
-                ))}
-                
-                {doctors.length === 0 && (
-                  <div className="col-span-full text-center py-12 bg-white rounded-lg">
-                    <Users className="h-12 w-12 text-primary/40 mx-auto mb-4" />
-                    <p className="text-gray-600 font-body">No doctors added yet</p>
-                    <p className="text-sm text-gray-500 mt-2 font-body">Add doctors in the Doctor Management tab</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'doctors' && <DoctorManagement />}
-            {activeTab === 'reset' && <DailyResetManager />}
-            {activeTab === 'qr' && <QRCodeGenerator />}
-            {activeTab === 'stats' && <Analytics />}
-          </>
-        )}
+        {activeTab === 'queue' && <QueueManagement clinicId={clinic.id} />}
+        {activeTab === 'settings' && <ClinicSettings />}
+        {activeTab === 'analytics' && <AnalyticsDashboard clinicId={clinic.id} />}
+        {activeTab === 'qr' && <QRCodeGenerator clinicId={clinic.id} />}
       </main>
-
-      {/* Edit Modal */}
-      {editingPatient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4 text-primary font-heading">Edit Patient</h3>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSaveEdit(editingPatient);
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Name</label>
-                <input
-                  type="text"
-                  value={editingPatient.name}
-                  onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-accent focus:border-accent font-body"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Phone</label>
-                <input
-                  type="tel"
-                  value={editingPatient.phone}
-                  onChange={(e) => setEditingPatient({ ...editingPatient, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-accent focus:border-accent font-body"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Patient Code</label>
-                <input
-                  type="text"
-                  value={editingPatient.patientCode}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-neutral text-gray-500 font-body"
-                />
-              </div>
-              <div className="flex space-x-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-accent text-white py-2 px-4 rounded-md hover:bg-accent/90 transition-colors font-heading"
-                >
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingPatient(null)}
-                  className="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors font-heading"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

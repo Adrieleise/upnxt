@@ -1,28 +1,35 @@
 export interface Patient {
   id: string;
   name: string;
-  phone: string;
-  doctorId: string;
-  timestamp: any;
-  served: boolean;
-  position: number;
-  queueNumber: number;
-  patientCode: string;
-  dateAdded: string; // YYYY-MM-DD format
-  hasSkipped?: boolean;
-  skippedAt?: any;
+  phoneNumber: string;
+  doctor: string;
+  joinedAt: any;
+  status: 'waiting' | 'served' | 'skipped' | 'canceled';
+  servedAt?: any;
 }
 
-export interface Doctor {
+export interface Clinic {
   id: string;
   name: string;
-  specialty: string;
-  acceptingQueues: boolean;
+  adminEmail: string;
   createdAt: any;
+  doctors: string[];
+}
+
+export interface DailyAnalytics {
+  date: string;
+  totalServed: number;
+  totalSkipped: number;
+  totalCanceled: number;
+  averageWaitTime: number;
+  shortestWaitTime: number;
+  longestWaitTime: number;
+  queueSize: number;
 }
 
 export interface QueueStats {
-  totalPatients: number;
-  servedToday: number;
-  waitingPatients: number;
+  totalWaiting: number;
+  totalServed: number;
+  totalSkipped: number;
+  totalCanceled: number;
 }

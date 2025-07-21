@@ -11,7 +11,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/queue" element={<Queue />} />
+          <Route path="/queue/:clinicId" element={<Queue />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
         <Toaster
@@ -25,7 +25,7 @@ function App() {
             success: {
               duration: 3000,
               style: {
-                background: '#10b981',
+                background: '#52AB98',
               },
             },
             error: {
