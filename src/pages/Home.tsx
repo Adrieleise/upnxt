@@ -30,12 +30,20 @@ const Home: React.FC = () => {
               <a href="#contact" className="text-gray-600 hover:text-primary transition-colors">
                 Contact
               </a>
-              <Link 
-                to="/admin" 
-                className="text-primary hover:text-primary/80 transition-colors font-medium"
-              >
-                Admin Login
-              </Link>
+              <div className="flex space-x-4">
+                <Link 
+                  to="/login" 
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/admin" 
+                  className="text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  Register
+                </Link>
+              </div>
             </nav>
           </div>
         </div>
