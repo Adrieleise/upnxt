@@ -56,19 +56,19 @@ export const useAuth = () => {
       await setDoc(doc(db, 'clinics', user.uid), clinicData);
       
       setClinic({ id: user.uid, ...clinicData });
-      toast.success('Clinic registered successfully!');
+      return user;
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Registration error:', error);
       throw error;
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success('Successfully logged in!');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
     } catch (error: any) {
-      toast.error('Invalid credentials');
+      console.error('Login error:', error);
       throw error;
     }
   };
@@ -77,9 +77,8 @@ export const useAuth = () => {
     try {
       await signOut(auth);
       setClinic(null);
-      toast.success('Logged out successfully');
     } catch (error: any) {
-      toast.error('Error logging out');
+      console.error('Logout error:', error);
       throw error;
     }
   };

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { ArrowUp, Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 
@@ -14,7 +12,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
 
   // Auto-redirect if already logged in
@@ -30,7 +28,7 @@ const Login: React.FC = () => {
     setError('');
     
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      await login(formData.email, formData.password);
       navigate('/admin');
     } catch (error: any) {
       console.error('Login error:', error);
@@ -41,6 +39,7 @@ const Login: React.FC = () => {
           setError('No account found with this email address.');
           break;
         case 'auth/wrong-password':
+        case 'auth/invalid-credential':
           setError('Incorrect password. Please try again.');
           break;
         case 'auth/invalid-email':

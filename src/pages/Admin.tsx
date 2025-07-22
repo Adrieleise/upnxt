@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import AuthForm from '../components/AuthForm';
 import AdminDashboard from '../components/AdminDashboard';
@@ -14,7 +15,12 @@ const Admin: React.FC = () => {
     );
   }
 
-  return user ? <AdminDashboard /> : <AuthForm />;
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <AdminDashboard />;
 };
 
 export default Admin;

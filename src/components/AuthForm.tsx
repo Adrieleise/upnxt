@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, Eye, EyeOff, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -6,6 +7,7 @@ const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -13,10 +15,12 @@ const AuthForm: React.FC = () => {
   });
 
   const { login, register } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
     try {
       if (isLogin) {
@@ -24,8 +28,10 @@ const AuthForm: React.FC = () => {
       } else {
         await register(formData.email, formData.password, formData.clinicName);
       }
+      navigate('/admin');
     } catch (error) {
       console.error('Auth error:', error);
+      setError(isLogin ? 'Login failed. Please check your credentials.' : 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -36,6 +42,7 @@ const AuthForm: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    if (error) setError('');
   };
 
   return (
@@ -59,6 +66,13 @@ const AuthForm: React.FC = () => {
             }
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm font-body">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isLogin && (
